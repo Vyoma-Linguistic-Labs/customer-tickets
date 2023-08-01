@@ -6,10 +6,8 @@ Created on Wed Jul  5 17:22:56 2023
 """
 
 import pandas as pd
-import datetime
 import time
 import requests
-from tqdm import tqdm
 import tkinter as tk
 from tkcalendar import Calendar
 
@@ -60,16 +58,11 @@ def get_data_for_these_dates():
     start_date = start_cal.selection_get()
     end_date = end_cal.selection_get()
     start_date = int(time.mktime(start_date.timetuple()))
-    end_date = int(time.mktime(end_date.timetuple()))
+    end_date = int(time.mktime(end_date.timetuple()))+86399 # EOD 11:59 PM instead of 12AM
     
-    team_id = "3314662"
     headers = {
       "Content-Type": "application/json",
       "Authorization": "pk_3326657_EOM3G6Z3CKH2W61H8NOL5T7AGO9D7LNN"
-    }
-    
-    query = {
-      "archived": "false"
     }
     
     list_id = "11943493" #Customer Ticketing System

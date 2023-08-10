@@ -60,10 +60,20 @@ def get_data_for_these_dates():
     start_date = int(time.mktime(start_date.timetuple()))
     end_date = int(time.mktime(end_date.timetuple()))+86399 # EOD 11:59 PM instead of 12AM
     
+    ### Extracting all status names from the space
+    space_id = "3565019"
+    url = "https://api.clickup.com/api/v2/space/" + space_id
+    
     headers = {
       "Content-Type": "application/json",
       "Authorization": "pk_3326657_EOM3G6Z3CKH2W61H8NOL5T7AGO9D7LNN"
     }
+    response = requests.get(url, headers=headers)
+    data = response.json()
+    # Extract the "statuses" list
+    statuses_list = data["statuses"]
+    # Extract the "status" values and create a list
+    status_values = [status["status"] for status in statuses_list]
     
     list_id = "11943493" #Customer Ticketing System
     url = "https://api.clickup.com/api/v2/list/" + list_id + "/task"
@@ -72,7 +82,8 @@ def get_data_for_these_dates():
       "archived": "false",
       "page": "0",
       "date_created_gt": str(start_date)+'000',
-      "date_created_lt": str(end_date)+'000'
+      "date_created_lt": str(end_date)+'000',
+       "statuses": status_values
     }
     
     # Initialize an empty list to store the concatenated tasks data
@@ -111,7 +122,7 @@ def get_data_for_these_dates():
         "country": [get_option_value(task["custom_fields"], "Country") for task in all_tasks],
         "website": [get_option_value(task["custom_fields"], "Website") for task in all_tasks],
         "product": [get_option_value(task["custom_fields"], "Product") for task in all_tasks],
-        "course": [get_option_value(task["custom_fields"], "course") for task in all_tasks],
+        "course": [get_option_value(task["custom_fields"], "Course") for task in all_tasks],
         "Type of Issue": [get_option_value(task["custom_fields"], "Type of Issue") for task in all_tasks],
         "resolvedDate": [find_detail(task["custom_fields"], "Resolved Date") for task in all_tasks],
         "responseGiven": [find_detail(task["custom_fields"], "Response Given") for task in all_tasks]
@@ -185,7 +196,7 @@ output_label = tk.Label(root,
 output_label.pack()
 
 # Create the footer label
-footer_label = tk.Label(root, text="Version 1.2 (1st August 2023)", relief=tk.RAISED, anchor=tk.W)
+footer_label = tk.Label(root, text="Version 1.3 (2nd August 2023)", relief=tk.RAISED, anchor=tk.W)
 footer_label.pack(side=tk.BOTTOM, fill=tk.X)
 
 root.mainloop()

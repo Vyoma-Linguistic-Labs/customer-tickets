@@ -10,6 +10,7 @@ import time
 import requests
 import tkinter as tk
 from tkcalendar import Calendar
+import pytz
 
 def find_detail(custom_fields, detail):
   """Finds the phone number in the list of custom fields.
@@ -105,7 +106,7 @@ def get_data_for_these_dates():
     
     # Create a Pandas DataFrame.
     df = pd.DataFrame({
-        "name": [task["name"] for task in all_tasks],
+        "Issue Description": [task["name"] for task in all_tasks],
         # "updatedDate": [task["date_updated"] for task in all_tasks],
         "status": [task["status"]["status"] for task in all_tasks],
         "priority": [task["priority"]["priority"] if task["priority"] is not None else ""
@@ -124,25 +125,43 @@ def get_data_for_these_dates():
         "product": [get_option_value(task["custom_fields"], "Product") for task in all_tasks],
         "course": [get_option_value(task["custom_fields"], "Course") for task in all_tasks],
         "Type of Issue": [get_option_value(task["custom_fields"], "Type of Issue") for task in all_tasks],
+        "Age Group": [get_option_value(task["custom_fields"], "Age Group") for task in all_tasks],
         "resolvedDate": [find_detail(task["custom_fields"], "Resolved Date") for task in all_tasks],
         "responseGiven": [find_detail(task["custom_fields"], "Response Given") for task in all_tasks]
         # "turnaroundHours": [int((int(resolvedDate) - int(createdDate))/3600000) for task in all_tasks]
     })
     
+    def change_date_format(input_date):
+       # Define time zones
+       ist = pytz.timezone('Asia/Kolkata')
+       
+       # Convert datetime to IST
+       formatted_date = input_date.dt.tz_localize(pytz.utc).dt.tz_convert(ist)    
+       # Define the desired output format
+       output_format = '%m/%d/%Y, %I:%M:%S %p %Z'    
+       # Format the IST datetime as desired
+       formatted_date = formatted_date.dt.strftime(output_format)
+        
+       return formatted_date
+   
     # Convert the unix time column to date format
     df["createdDate"] = pd.to_datetime(df["createdDate"], unit="ms")
     df["resolvedDate"] = pd.to_datetime(df["resolvedDate"], unit="ms")
+    # Calculate the difference between the two columns in days and hours
+    df["TAT"] = (df["createdDate"] - df["resolvedDate"]).dt.days
+    
+    df["createdDate"] = change_date_format(df["createdDate"])
+    df["resolvedDate"] = change_date_format(df["resolvedDate"])
     
     # Convert the time column to hours and minutes
     df["timeSpent"] = df["timeSpent"].apply(lambda x: f"{int((x/1000) / (60 * 60))}h {int((x/1000) % (60 * 60)) // 60}m")
     
-    # Convert the time columns to datetime format
-    df["createdDate"] = pd.to_datetime(df["createdDate"])
-    df["resolvedDate"] = pd.to_datetime(df["resolvedDate"])
-    # Calculate the difference between the two columns in days and hours
-    df["TAT"] = (df["createdDate"] - df["resolvedDate"]).dt.days
+    # # Convert the time columns to datetime format
+    # df["createdDate"] = pd.to_datetime(df["createdDate"])
+    # df["resolvedDate"] = pd.to_datetime(df["resolvedDate"])
+    
     # Save the Pandas DataFrame to an Excel spreadsheet.
-    df.to_excel("CustomerTickets.xlsx")
+    df.to_csv("CustomerTickets.csv")
 
 root = tk.Tk()
 root.title("Customer Ticket Resolution - Analytics.")
@@ -196,7 +215,7 @@ output_label = tk.Label(root,
 output_label.pack()
 
 # Create the footer label
-footer_label = tk.Label(root, text="Version 1.3 (2nd August 2023)", relief=tk.RAISED, anchor=tk.W)
+footer_label = tk.Label(root, text="Version 1.4 (5th Sept 2023)", relief=tk.RAISED, anchor=tk.W)
 footer_label.pack(side=tk.BOTTOM, fill=tk.X)
 
 root.mainloop()
